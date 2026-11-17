@@ -61,10 +61,7 @@ function add_product(mysqli $conn, string $name, string $price): ?string {
     $stmt = mysqli_prepare($conn, $sql);
     mysqli_stmt_bind_param($stmt, "sd", $name, $price);
     mysqli_stmt_execute($stmt);
-
     mysqli_stmt_close($stmt);
-    header("Location: products.php");
-    exit;
   }
   catch(mysqli_sql_exception $e){
     error_log($e->getMessage());
@@ -81,14 +78,13 @@ function add_product(mysqli $conn, string $name, string $price): ?string {
 $error = "";
 
 if($_SERVER["REQUEST_METHOD"] === "POST"){
-  $name = trim($_POST["product-name"] ?? "");
-  $price = trim($_POST["product-price"] ?? "");
-
   if(isset($_GET["id"])){
-    $error = delete_product($conn, $_GET["id"] ?? "");
+    $error = delete_product($conn, $_GET["id"]) ?? "";
   }
   else{
-    $error = add_product($conn, $name, $price) ?? "";
+    $error = add_product($conn,
+                         trim($_POST["product-name"] ?? ""), 
+                         trim($_POST["product-price"] ?? "")) ?? "";
   }
 
   if($error === ""){
