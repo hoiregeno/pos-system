@@ -1,3 +1,3 @@
 <?php
-require "./includes/db.php";
+require "./sell.php";
 ?>
