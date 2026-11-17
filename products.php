@@ -1,29 +1,6 @@
 <?php
 require "./includes/db.php";
-
-function validate_product(string $name, string $price): ?string {
-  if($name === ""){
-    return "Product name is required.";
-  }
-
-  if(mb_strlen($name) > 100){
-    return "Product name is too long.";
-  }
-
-  if(!is_numeric($price)){
-    return "Price must be a number.";
-  }
-
-  if((float) $price < 0){
-    return "Price cannot be negative.";
-  }
-
-  if((float) $price > 99999999.99){
-    return "Price is too large.";
-  }
-
-  return null;
-}
+require "./includes/functions.php";
 
 function delete_product(mysqli $conn, $id): ?string {
   $id = filter_var($id, FILTER_VALIDATE_INT);
@@ -132,9 +109,12 @@ require "./includes/header.php";
             <td><?= htmlspecialchars($num++) ?></td>
             <td><?= htmlspecialchars($row["name"]) ?></td>
             <td><?= htmlspecialchars($row["price"]) ?></td>
-            <td><form action="products.php?id=<?= htmlspecialchars($row["id"]) ?>" method="post">
-              <button type="submit" onclick="return confirm('Do you want to delete this product?')">Delete</button>
-            </form></td>
+            <td>
+              <a href="edit.php?id=<?= htmlspecialchars($row["id"]) ?>">Edit</a>
+              <form action="products.php?id=<?= htmlspecialchars($row["id"]) ?>" method="post">
+                <button type="submit" onclick="return confirm('Do you want to delete this product?')">Delete</button>
+              </form>
+            </td>
           </tr>
         <?php endwhile; ?>
       </tbody>
