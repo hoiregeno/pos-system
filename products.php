@@ -25,39 +25,75 @@ function validate_product(string $name, string $price): ?string {
   return null;
 }
 
+function delete_product(mysqli $conn, $id): ?string {
+  $id = filter_var($id, FILTER_VALIDATE_INT);
+
+  if($id === false){
+    return "Invalid product.";
+  }
+
+  try{
+    $sql = "DELETE FROM products WHERE id = ?";
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, "i", $id);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+  }catch(mysqli_sql_exception $e){
+    error_log($e->getMessage());
+    return "Could not delete product.";
+  }
+
+  return null;
+}
+
+function add_product(mysqli $conn, string $name, string $price): ?string {
+  $error = validate_product($name, $price);
+
+  if($error !== null){
+    return $error;
+  }
+
+  $name = ucwords($name);
+  $price = (float) $price;
+
+  try{
+    $sql = "INSERT INTO products (name, price) VALUES (?, ?)";
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, "sd", $name, $price);
+    mysqli_stmt_execute($stmt);
+
+    mysqli_stmt_close($stmt);
+    header("Location: products.php");
+    exit;
+  }
+  catch(mysqli_sql_exception $e){
+    error_log($e->getMessage());
+    if($e->getCode() === 1062){
+      return "Product already exists.";
+    }
+
+    return "Could not save the product. Please try again.";
+  }
+
+  return null;
+}
+
 $error = "";
-$product_name = "";
-$product_price = "";
 
 if($_SERVER["REQUEST_METHOD"] === "POST"){
-  $product_name = trim($_POST["product-name"] ?? "");
-  $product_price = trim($_POST["product-price"] ?? "");
+  $name = trim($_POST["product-name"] ?? "");
+  $price = trim($_POST["product-price"] ?? "");
 
-  $error = validate_product($product_name, $product_price) ?? "";
+  if(isset($_GET["id"])){
+    $error = delete_product($conn, $_GET["id"] ?? "");
+  }
+  else{
+    $error = add_product($conn, $name, $price) ?? "";
+  }
 
   if($error === ""){
-    $product_name = ucwords($product_name);
-    $product_price = (float) $product_price;
-
-    try{
-      $sql = "INSERT INTO products (name, price) VALUES (?, ?)";
-      $stmt = mysqli_prepare($conn, $sql);
-      mysqli_stmt_bind_param($stmt, "sd", $product_name, $product_price);
-      mysqli_stmt_execute($stmt);
-
-      mysqli_stmt_close($stmt);
-      header("Location: products.php");
-      exit;
-    }
-    catch(mysqli_sql_exception $e){
-      error_log($e->getMessage());
-      if($e->getCode() === 1062){
-        $error = "Product already exists.";
-      }
-      else{
-        $error = "Could not save the product please try again.";
-      }
-    }
+    header("Location: products.php");
+    exit;
   }
 }
 
@@ -89,6 +125,7 @@ require "./includes/header.php";
           <th>No.</th>
           <th>Name</th>
           <th>Price</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody>
@@ -99,6 +136,9 @@ require "./includes/header.php";
             <td><?= htmlspecialchars($num++) ?></td>
             <td><?= htmlspecialchars($row["name"]) ?></td>
             <td><?= htmlspecialchars($row["price"]) ?></td>
+            <td><form action="products.php?id=<?= htmlspecialchars($row["id"]) ?>" method="post">
+              <button type="submit" onclick="return confirm('Do you want to delete this product?')">Delete</button>
+            </form></td>
           </tr>
         <?php endwhile; ?>
       </tbody>
