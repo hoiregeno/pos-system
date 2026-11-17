@@ -63,52 +63,47 @@ if($_SERVER["REQUEST_METHOD"] === "POST"){
 
 $sql = "SELECT id, name, price FROM products ORDER BY id";
 $result = mysqli_query($conn, $sql);
+
+$page_title = "Products";
+require "./includes/header.php";
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Products</title>
-</head>
-<body>
-  <div class="wrapper">
-    <div class="form-wrapper">
-      <h2>Add product</h2>
+<div class="wrapper">
+  <div class="form-wrapper">
+    <h2>Add product</h2>
 
-      <?php if($error !== ""): ?>
-        <p class="error" role="alert"><?= htmlspecialchars($error) ?></p>
-      <?php endif; ?>
+    <?php if($error !== ""): ?>
+      <p class="error" role="alert"><?= htmlspecialchars($error) ?></p>
+    <?php endif; ?>
 
-      <form action="./products.php" method="post">
-        <input type="text" name="product-name" placeholder="Product name" required>
-        <input type="number" name="product-price" step="0.01" min="0" placeholder="Price" required>
-        <button type="submit">Add product</button>
-      </form>
-    </div>
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>No.</th>
-            <th>Name</th>
-            <th>Price</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php 
-          $num = 1;
-          while($row = mysqli_fetch_assoc($result)): ?>
-            <tr>
-              <td><?= htmlspecialchars($num++) ?></td>
-              <td><?= htmlspecialchars($row["name"]) ?></td>
-              <td><?= htmlspecialchars($row["price"]) ?></td>
-            </tr>
-          <?php endwhile; ?>
-        </tbody>
-      </table>
-    </div>
+    <form action="./products.php" method="post">
+      <input type="text" name="product-name" placeholder="Product name" required>
+      <input type="number" name="product-price" step="0.01" min="0" placeholder="Price" required>
+      <button type="submit">Add product</button>
+    </form>
   </div>
-</body>
-</html>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>No.</th>
+          <th>Name</th>
+          <th>Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php 
+        $num = 1;
+        while($row = mysqli_fetch_assoc($result)): ?>
+          <tr>
+            <td><?= htmlspecialchars($num++) ?></td>
+            <td><?= htmlspecialchars($row["name"]) ?></td>
+            <td><?= htmlspecialchars($row["price"]) ?></td>
+          </tr>
+        <?php endwhile; ?>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<?php require "./includes/footer.php" ?>

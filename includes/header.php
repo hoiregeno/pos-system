@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><?php echo htmlspecialchars($page_title ?? "POS") ?></title>
+</head>
+<body>
+  <header>
+    <nav>
+      <ul>
+        <li><a href="./sell.php">Sell</a></li>
+        <li><a href="./products.php">Products</a></li>
+        <li><a href="./sales.php">Sales</a></li>
+      </ul>
+    </nav>
+  </header>
