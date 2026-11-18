@@ -27,11 +27,56 @@ function get_product($conn, $id): ?array {
 }
 
 function update_product($conn, $id, $name, $price): ?string {
-  
+  $id = filter_var($id, FILTER_VALIDATE_INT);
+
+  if($id === false){
+    return "Invalid product.";
+  }
+
+  $error = validate_product($name, $price);
+
+  if($error !== null){
+    return $error;
+  }
+
+  $name = ucwords($name);
+  $price = (float) $price;
+
+  try{
+    $sql = "UPDATE products
+            SET name = ?,
+            price = ?
+            WHERE id = ?";
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, "sdi", $name, $price, $id);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+  }
+  catch(mysqli_sql_exception $e){
+    error_log($e->getMessage());
+
+    if($e->getCode() === 1062){
+      return "Product already exists.";
+    }
+
+    return "Could not edit the product. Please try again.";
+  }
+
+  return null;
 }
 
+$error = "";
+
 if($_SERVER["REQUEST_METHOD"] === "POST"){
-  
+  $error = update_product($conn,
+                          $_GET["id"] ?? "",
+                          trim($_POST["product-name"] ?? ""),
+                          trim($_POST["product-price"] ?? "")) ?? "";
+
+  if($error === "") {
+    header("Location: products.php");
+    exit;
+  }
 }
 
 $id = $_GET["id"] ?? "";
@@ -50,7 +95,11 @@ require "./includes/header.php";
   <div class="form-wrapper">
     <h2>Edit product</h2>
 
-    <form action="edit.php" method="post">
+    <?php if($error !== ""): ?>
+      <p class="error" role="alert"><?= htmlspecialchars($error) ?></p>
+    <?php endif; ?>
+    
+    <form action="edit.php?id=<?= htmlspecialchars($id) ?>" method="post">
       <input type="text" name="product-name" placeholder="Product name" value="<?= htmlspecialchars($product['name']) ?>" required>
       <input type="number" name="product-price" step="0.01" min="0" placeholder="Price" value="<?= htmlspecialchars($product['price']) ?>" required>
       <div class="btn-wrapper">
