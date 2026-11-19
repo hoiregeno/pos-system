@@ -2,30 +2,6 @@
 require "./includes/db.php";
 require "./includes/functions.php";
 
-function get_product($conn, $id): ?array {
-  $id = filter_var($id, FILTER_VALIDATE_INT);
-
-  if($id === false){
-    return null;
-  }
-
-  try{
-    $sql = "SELECT name, price FROM products WHERE id = ?";
-    $stmt = mysqli_prepare($conn, $sql);
-    mysqli_stmt_bind_param($stmt, "i", $id);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-    $row = mysqli_fetch_assoc($result);
-    mysqli_stmt_close($stmt);
-
-    return $row;
-  }
-  catch(mysqli_sql_exception $e){
-    error_log($e->getMessage());
-    return null;
-  }
-}
-
 function update_product($conn, $id, $name, $price): ?string {
   $id = filter_var($id, FILTER_VALIDATE_INT);
 
