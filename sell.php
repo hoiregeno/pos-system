@@ -24,10 +24,79 @@ function add_to_cart($conn, $id): ?string {
   return null;
 }
 
+function complete_sale($conn, $cart): ?string {
+  if(empty($cart)){
+    return "Cart is empty.";
+  }
+
+  $items = [];
+  $total = 0;
+
+  foreach($cart as $id => $qty){
+    $product = get_product($conn, $id);
+
+    if($product === null){
+      return "Product not found.";
+    }
+
+    $total += $product["price"] * $qty;
+    $items[] = [
+      "product_id" => $id,
+      "quantity" => $qty,
+      "price" => $product["price"]
+    ];
+  }
+
+  try{
+    // 1. start the transaction
+    mysqli_begin_transaction($conn);
+
+    // 2. insert the total into sales
+    $sql = "INSERT INTO sales (total) VALUES (?)";
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, "d", $total);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+
+    // 3. get the new sale id
+    $sale_id = mysqli_insert_id($conn);
+
+    // 4. insert one sale_items row for each entry in $items
+    $sql = "INSERT INTO sale_items (sale_id, product_id, quantity, price)
+            VALUES (?, ?, ?, ?)";
+    $stmt = mysqli_prepare($conn, $sql);
+
+    // 5. commit
+    foreach($items as $item){
+      mysqli_stmt_bind_param($stmt, "iiid", $sale_id, $item["product_id"], $item["quantity"], $item["price"]);
+      mysqli_stmt_execute($stmt);
+    }
+
+    mysqli_stmt_close($stmt);
+    mysqli_commit($conn);
+  }
+  catch(mysqli_sql_exception $e){
+    // roll back, log the error, return a general message
+    mysqli_rollback($conn);
+    error_log($e->getMessage());
+    return "Could not complete the sale. Please try again.";
+  }
+
+  // clear the cart, then return null
+  unset($_SESSION["cart"]);
+
+  return null;
+}
+
 $error = "";
 
-if($_SERVER["REQUEST_METHOD"] === "POST" && isset($_GET["id"])){
-  $error = add_to_cart($conn, $_GET["id"]) ?? "";
+if($_SERVER["REQUEST_METHOD"] === "POST"){
+  if(isset($_GET["id"])){
+    $error = add_to_cart($conn, $_GET["id"]) ?? "";
+  }
+  else{
+    $error = complete_sale($conn, $_SESSION["cart"] ?? []) ?? "";
+  }
 
   if($error === ""){
     header("Location: sell.php");
@@ -44,6 +113,7 @@ $total = 0;
 $page_title = "Sell";
 require "./includes/header.php";
 ?>
+
 <div class="wrapper">
   <div class="product-grid">
     <?php if($error !== ""): ?>
@@ -88,8 +158,9 @@ require "./includes/header.php";
     <p>Total: <?= number_format($total, 2) ?></p>
 
     <form action="sell.php" method="post">
-      <button type="submit">Complete Sale</button>
+      <button type="submit" name="complete-sale">Complete Sale</button>
     </form>
   </div>
 </div>
+
 <?php require "./includes/footer.php" ?>
