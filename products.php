@@ -17,6 +17,11 @@ function delete_product(mysqli $conn, $id): ?string {
     mysqli_stmt_close($stmt);
   }catch(mysqli_sql_exception $e){
     error_log($e->getMessage());
+    
+    if($e->getCode() === 1451){
+      return "This product has been sold, so it can't be deleted.";
+    }
+
     return "Could not delete product.";
   }
 
